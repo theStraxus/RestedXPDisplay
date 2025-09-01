@@ -1,0 +1,8 @@
+## Interface: 11200
+## Title: Rested XP Display
+## Notes: Shows your rested XP in a draggable frame.
+## Author: Straxus (.straxus on Discord)
+## Version: 1.3
+## SavedVariables: RestedXPDB
+
+RestedXPDisplay.lua

@@ -21,7 +21,7 @@ f.restedText:SetPoint("TOP", f, "TOP", 0, -5)
 
 -- XP to Level text
 f.remainingText = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-f.remainingText:SetPoint("TOP", f.restedText, "BOTTOM", 0, -2) -- closer together (-2 instead of bigger gap)
+f.remainingText:SetPoint("TOP", f.restedText, "BOTTOM", 0, -2)
 
 -- Dragging handlers
 f:SetScript("OnDragStart", function() f:StartMoving() end)
@@ -35,8 +35,24 @@ f:SetScript("OnDragStop", function()
     RestedXPDB.yOfs = yOfs
 end)
 
+-- Helper: disable frame permanently at max level
+local function DisableAtMaxLevel()
+    f:Hide()
+    f:UnregisterAllEvents()
+    DEFAULT_CHAT_FRAME:AddMessage("|cffffff00Rested XP frame disabled at max level.|r")
+end
+
 -- Function to update texts
 local function UpdateXPTexts()
+    local playerLevel = UnitLevel("player")
+    local maxLevel = 60 -- Vanilla Classic cap
+
+    -- Auto-disable if at or above max level
+    if playerLevel >= maxLevel then
+        DisableAtMaxLevel()
+        return
+    end
+
     local rested = GetXPExhaustion()
     local currXP = UnitXP("player")
     local maxXP = UnitXPMax("player")
@@ -59,9 +75,15 @@ end
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:RegisterEvent("UPDATE_EXHAUSTION")
 f:RegisterEvent("PLAYER_XP_UPDATE")
+f:RegisterEvent("PLAYER_LEVEL_UP")
 
 f:SetScript("OnEvent", function(_, event)
     if event == "PLAYER_ENTERING_WORLD" then
+        -- Check immediately if at max level
+        if UnitLevel("player") >= 60 then
+            DisableAtMaxLevel()
+            return
+        end
         -- Restore saved position
         if RestedXPDB.point then
             f:ClearAllPoints()
@@ -71,12 +93,21 @@ f:SetScript("OnEvent", function(_, event)
     UpdateXPTexts()
 end)
 
--- Initial update
-UpdateXPTexts()
+-- Initial check at addon load
+if UnitLevel("player") >= 60 then
+    DisableAtMaxLevel()
+else
+    UpdateXPTexts()
+end
 
 -- Slash command
 SLASH_RESTEDXP1 = "/restedxp"
 SlashCmdList["RESTEDXP"] = function(msg)
+    if UnitLevel("player") >= 60 then
+        DEFAULT_CHAT_FRAME:AddMessage("|cffffff00Rested XP frame is disabled at max level.|r")
+        return
+    end
+
     UpdateXPTexts()
 
     if msg == "toggle" then
